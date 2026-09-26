@@ -1,1 +1,64 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sai Chat App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body{font-family:Arial;background:#111;color:white;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+        #box{background:#222;padding:20px;border-radius:10px;width:90%;max-width:400px}
+        #messages{height:300px;overflow-y:auto;border:1px solid #444;padding:10px;margin:10px 0;background:#000}
+        input,button{padding:10px;width:100%;margin:5px 0;border-radius:5px;border:none}
+        button{background:#25D366;color:white;font-weight:bold;cursor:pointer}
+        .join{color:#25D366} .msg{margin:5px 0}
+    </style>
+</head>
+<body>
+<div id="box">
+    <h2>Sai Chat App 💬</h2>
+    <div id="loginDiv">
+        <input id="username" placeholder="Enter your name">
+        <button onclick="joinChat()">Join Chat</button>
+    </div>
+    <div id="chatDiv" style="display:none">
+        <div id="messages"></div>
+        <div id="users" style="font-size:12px;color:#aaa"></div>
+        <input id="msgInput" placeholder="Type message...">
+        <button onclick="sendMsg()">Send</button>
+    </div>
+</div>
+<script>
+    const socket = io();
+    let myName = "";
+    function joinChat(){
+        myName = document.getElementById('username').value;
+        if(!myName) return alert("Enter name");
+        socket.emit('join', {username: myName});
+        document.getElementById('loginDiv').style.display='none';
+        document.getElementById('chatDiv').style.display='block';
+    }
+    function sendMsg(){
+        let m = document.getElementById('msgInput').value;
+        if(!m) return;
+        socket.emit('message', {message: m});
+        document.getElementById('msgInput').value='';
+    }
+    socket.on('new_message', data=>{
+        let div = document.getElementById('messages');
+        div.innerHTML += `<div class="msg"><b>${data.username}:</b> ${data.message}</div>`;
+        div.scrollTop = div.scrollHeight;
+    });
+    socket.on('user_joined', data=>{
+        let div = document.getElementById('messages');
+        div.innerHTML += `<div class="join">${data.username} joined</div>`;
+    });
+    socket.on('user_list', data=>{
+        document.getElementById('users').innerHTML = "Online: " + data.users.join(", ");
+    });
+    document.getElementById('msgInput').addEventListener('keypress', function(e){
+        if(e.key==='Enter') sendMsg();
+    });
+</script>
+</body>
+</html>
